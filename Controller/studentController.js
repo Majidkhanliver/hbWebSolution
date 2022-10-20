@@ -1,11 +1,15 @@
 const { response } = require("express");
 const { default: mongoose } = require("mongoose");
 const Student = require("../Models/Student")
-
+const ObjectId = require('mongoose').Types.ObjectId
+const section = require("../Models/Section")
 const addStudent = async (req, res) => {
     const { firstName, lastName, fathersName, mothersName, mobileNo, whatsAppNo, emailId, DOB } = req.body;
     const { street, city, state, country, pinCode } = req.body.Address;
-    try {
+    const SectionCumClassId = req.body.secitonId;
+    const id = SectionCumClassId.length == 24 ? new ObjectId(SectionCumClassId) : null;
+    section.findById(id).then((res) => {
+
         const student = new Student({
 
             firstName: firstName,
@@ -23,17 +27,19 @@ const addStudent = async (req, res) => {
                 pinCode: pinCode,
                 country: country,
             },
+            ClassId: id
         })
-        let doc = await student.save();
-        return res.status(201).json(doc);
-    } catch (err) {
-        console.log(err);
-        res.json(err)
-    }
+        return student.save();
+
+    }).then((doc) => {
+        res.status(201).json(doc);
+    }).catch((err) =>
+        res.json({ error: "Class and section not found" }))
+
 }
 const getAllStudents = async (req, res) => {
     try {
-        let students = await Student.find();
+        let students = await Student.find().populate("ClassId").populate("ClassId.classId");
         return res.status(200).json(students);
     } catch (err) {
         res.json(err);
@@ -44,7 +50,7 @@ const getStudent = async (req, res) => {
     var id = req.params.id.length == 24 ? mongoose.Types.ObjectId(req.params.id) : null;
     try {
         console.log(id)
-        let student = await Student.findOne({ _id: id })
+        let student = await Student.findOne({ _id: id }).populate("ClassId").populate("ClassId.classId");
         console.log(student)
         res.status(200).json(student);
 
@@ -74,7 +80,8 @@ const updateStudent = async (req, res) => {
                     state: state,
                     pinCode: pinCode,
                     country: country,
-                }
+                },
+                ClassId: id
             }
         });
         res.status(200).json(student);

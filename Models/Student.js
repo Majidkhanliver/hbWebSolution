@@ -41,6 +41,10 @@ const students = mongoose.Schema(
             pinCode: Number,
             country: String
         },
+        ClassId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'section'
+        }
     }
 
 )
